@@ -7,8 +7,11 @@ dotenv.config();
 const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
 
 // When the client is ready, run this code (only once)
-client.once('ready', () => {
-	console.log('Ready!');
+client.once('ready', (client) => {
+	console.log(`Ready to work.\nClient ID ${client.user.id}`);
+	client.guilds.cache.forEach( (guild, guildID, _ ) => {
+		console.log(`Connected to guild "${guild.name}" of ID ${guildID}`);
+	});
 });
 
 // Login to Discord with your client's token
