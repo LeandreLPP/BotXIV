@@ -1,0 +1,31 @@
+{
+  "name": "botxiv",
+  "version": "1.0.0",
+  "description": "A Discord bot for things Final Fantasy XIV related",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LeandreLPP/BotXIV.git"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "ffxiv",
+    "final",
+    "fantasy",
+    "XIV"
+  ],
+  "author": "LeandreLPP",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/LeandreLPP/BotXIV/issues"
+  },
+  "homepage": "https://github.com/LeandreLPP/BotXIV#readme",
+  "dependencies": {
+    "discord.js": "^13.2.0",
+    "dotenv": "^10.0.0"
+  }
+}
