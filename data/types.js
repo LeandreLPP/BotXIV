@@ -14,7 +14,7 @@ module.exports = {
         { name: 'Samurai',      id: 'SAM', role: 'DPS', subtype: 'Melee' },
         // { name: 'Reaper',       id: 'RPR', role: 'DPS', subtype: 'Melee' },
         { name: 'Bard',         id: 'BRD', role: 'DPS', subtype: 'Ranged' },
-        { name: 'Machinist',    id: 'MCN', role: 'DPS', subtype: 'Ranged' },
+        { name: 'Machinist',    id: 'MCH', role: 'DPS', subtype: 'Ranged' },
         { name: 'Dancer',       id: 'DNC', role: 'DPS', subtype: 'Ranged' },
         { name: 'Black Mage',   id: 'BLM', role: 'DPS', subtype: 'Caster' },
         { name: 'Summoner',     id: 'SMN', role: 'DPS', subtype: 'Caster' },
