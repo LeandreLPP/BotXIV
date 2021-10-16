@@ -27,25 +27,61 @@ for (const file of commandFiles) {
 	client.commands.set(command.data.name, command);
 }
 
+// Register interactions to match with button interactions
+client.registeredInteraction = {};
+client.registerInteraction = function(interaction) {
+	client.registeredInteraction[`${interaction.id}`] = interaction;
+}
+
 // Answer commands
 client.on('interactionCreate', async interaction => {
-	if (!interaction.isCommand()) return;
+	if (interaction.isCommand()) 
+		manageCommand(interaction);
+	else if(interaction.isButton())
+		manageButton(interaction);
 
-	const command = client.commands.get(interaction.commandName);
+});
+
+async function manageCommand(commandInteraction) {
+	const command = client.commands.get(commandInteraction.commandName);
 
 	if (!command) return;
 
 	try {
-		await command.execute(client, interaction);
+		await command.execute(client, commandInteraction);
+        client.registerInteraction(commandInteraction);
 	} catch (error) {
 		console.error(error);
-		const answer = { content: 'There was an error while executing this command!', ephemeral: true };
-		if (interaction.deferred || interaction.replied)
-			await interaction.editReply(answer);
+		const answer = { content: 'There was an error while executing this command.', ephemeral: true };
+		if (commandInteraction.deferred || commandInteraction.replied)
+			await commandInteraction.editReply(answer);
 		else
-			await interaction.reply(answer);
+			await commandInteraction.reply(answer);
 	}
-});
+}
+
+async function manageButton(buttonInteraction) {
+	const interactionId = buttonInteraction.customId.split("-")[0];
+	if( !interactionId ) return;
+	
+	const commandInteraction = client.registeredInteraction[interactionId];
+	if (!commandInteraction) {
+		await buttonInteraction.reply({ content: 'This message is too old, I can no longer edit it.', ephemeral: true });
+		return;
+	}
+
+	try {
+		await commandInteraction.reactToButton(client, buttonInteraction);
+        await buttonInteraction.deferUpdate();
+	} catch (error) {
+		console.error(error);
+		const answer = { content: 'There was an error while treating this button press.', ephemeral: true };
+		if (buttonInteraction.deferred || buttonInteraction.replied)
+			await buttonInteraction.editReply(answer);
+		else
+			await buttonInteraction.reply(answer);
+	}
+}
 
 // Login to Discord with your client's token
 client.login(process.env.DISCORD_TOKEN);

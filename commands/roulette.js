@@ -1,16 +1,93 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
+const { MessageActionRow, MessageButton } = require('discord.js');
 const { Roulettes, Jobs } = require("../data/types.js");
 
-function emojiString(id, interaction) {
-    var ret = `:${id}:`;
-
-    interaction.guild.emojis.cache.forEach(emoji => {
-        if(emoji.name === id)  {
-            ret = `<:${emoji.name}:${emoji.id}>`;
-        }
+function getGuildEmoji(id, guild) {
+    var ret = undefined;
+    guild.emojis.cache.forEach(emoji => {
+        if(emoji.name === id)
+            ret = emoji;
     });
-    
     return ret;
+}
+
+function emojiString(id, guild) {
+    const emoji = getGuildEmoji(id, guild);
+    return emoji === undefined ? `:${id}:` : `<:${emoji.name}:${emoji.id}>`;
+}
+
+async function reactToButton(buttonInteraction, interaction) {
+    const parameters = buttonInteraction.customId.split("-");
+    if(parameters[1] == 'addPlayer') {
+        addPlayer(interaction);
+        await updateResult(interaction);
+    }
+    else if( parameters[1] == 'rerollPlayer' ) {
+        rerollPlayer(interaction, parameters[2]);
+        await updateResult(interaction);
+    }
+}
+
+async function updateResult(interaction) {
+    var answer = `For this "${interaction.roulette.description}" roulette, I suggest that you use the following jobs:`;
+
+    const buttons = [];
+
+    interaction.chosenJobs.forEach((job, index) => {
+        const emoji = getGuildEmoji(job.id, interaction.guild);
+        answer += `\n - Player ${index + 1}: ${emojiString(job.id, interaction.guild)} ${job.name}`;
+
+        var rerollButton = new MessageButton()
+            .setCustomId(`${interaction.id}-rerollPlayer-${index}`)
+            .setLabel(`Reroll player ${index + 1}`)
+            .setStyle('SECONDARY');
+
+        if( emoji )
+            rerollButton = rerollButton.setEmoji(emoji);
+
+        buttons.push(rerollButton);
+    });
+
+    if( interaction.rolesNeeded.length > 0  ) {
+        buttons.push(new MessageButton()
+            .setCustomId(`${interaction.id}-addPlayer`)
+            .setLabel(`Add player`)
+            .setStyle('SUCCESS')
+        );
+    }
+    
+    // Add buttons to rows
+    componentRows = [new MessageActionRow().addComponents(buttons.splice(0, 4))];
+    if( buttons.length > 0 )
+        componentRows.push( new MessageActionRow().addComponents(buttons.splice(0, 4)) );
+
+    interaction.reactToButton = async (_, buttonInteraction) => await reactToButton(buttonInteraction, interaction);
+
+    await interaction.editReply({ content: answer, components: componentRows });
+}
+
+function rerollPlayer(interaction, index) {
+    if( index < 0 || index >= interaction.chosenJobs.length )
+        return;
+
+    interaction.rolesNeeded.push( interaction.chosenJobs[index].role );
+    interaction.chosenJobs.splice(index, 1, chooseJob(interaction));
+}
+
+function chooseJob(interaction) {
+    if( interaction.rolesNeeded.length <= 0 )
+        return undefined;
+
+    const chosenIndex =  Math.floor(Math.random() * interaction.rolesNeeded.length);
+    const chosenRole = interaction.rolesNeeded.splice(chosenIndex, 1);
+    const relevantJobs = Jobs.filter( job => job.role === chosenRole[0] );
+    return relevantJobs[ Math.floor(Math.random() * relevantJobs.length) ];
+}
+
+function addPlayer(interaction) {
+    const chosenJob = chooseJob(interaction);
+    if( chosenJob )
+        interaction.chosenJobs.push( chosenJob );
 }
 
 module.exports = {
@@ -48,23 +125,16 @@ module.exports = {
 		await interaction.deferReply();
 
         interaction.rolesNeeded = [...interaction.roulette.roles];
-        if( number === null || number > interaction.rolesNeeded.length )
+        if( number === null )
+            number = 1;
+        else if( number > interaction.rolesNeeded.length )
             number = interaction.rolesNeeded.length;
 
         interaction.chosenJobs = [];
         for(var i = 0; i < number; i++) {
-            const chosenIndex =  Math.floor(Math.random() * interaction.rolesNeeded.length);
-            const chosenRole = interaction.rolesNeeded.splice(chosenIndex, 1);
-            const relevantJobs = Jobs.filter( job => job.role === chosenRole[0] );
-
-            interaction.chosenJobs.push(relevantJobs[ Math.floor(Math.random() * relevantJobs.length) ]);
+            addPlayer(interaction);
         }
 
-        var answer = `For this "${interaction.roulette.description}" roulette, I suggest that you use the following jobs:`;
-        interaction.chosenJobs.forEach((job, index) => {
-            answer += `\n - Player ${index + 1}: ${emojiString(job.id, interaction)} ${job.name}`;
-        });
-
-        await interaction.editReply(answer);
+        await updateResult(interaction);
     },
 };
