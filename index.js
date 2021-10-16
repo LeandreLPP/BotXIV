@@ -39,7 +39,11 @@ client.on('interactionCreate', async interaction => {
 		await command.execute(client, interaction);
 	} catch (error) {
 		console.error(error);
-		await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+		const answer = { content: 'There was an error while executing this command!', ephemeral: true };
+		if (interaction.deferred || interaction.replied)
+			await interaction.editReply(answer);
+		else
+			await interaction.reply(answer);
 	}
 });
 

@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
-const { Roulettes } = require("../data/types.js");
+const { Roulettes, Jobs } = require("../data/types.js");
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -26,8 +26,33 @@ module.exports = {
     async execute(client, interaction) {
         const type = interaction.options.getString('type');
         var number = interaction.options.getInteger('number');
-        if( number === null ) 
-            number = 1;
-        await interaction.reply(`This is a roulette command, of type "${type}", for ${number} player(s).`);
+
+        const roulette = Roulettes[type];
+        if( roulette === null ) {
+            await interaction.reply({ content: 'The roulette type selected is not recognised!', ephemeral: true });
+            return;
+        }
+
+		await interaction.deferReply();
+
+        interaction.rolesNeeded = [...roulette.roles];
+        if( number === null || number > interaction.rolesNeeded.length )
+            number = interaction.rolesNeeded.length;
+
+        interaction.chosenJobs = [];
+        for(var i = 0; i < number; i++) {
+            const chosenIndex =  Math.floor(Math.random() * interaction.rolesNeeded.length);
+            const chosenRole = interaction.rolesNeeded.splice(chosenIndex, 1);
+            const relevantJobs = Jobs.filter( job => job.role === chosenRole[0] );
+
+            interaction.chosenJobs.push(relevantJobs[ Math.floor(Math.random() * relevantJobs.length) ]);
+        }
+
+        var answer = `For this "${roulette.description}", I suggest that you use the following jobs:`;
+        interaction.chosenJobs.forEach((job, index) => {
+            answer += `\n - Player ${index + 1}: ${job.name} :${job.id}:`;
+        });
+
+        await interaction.editReply(answer);
     },
 };
