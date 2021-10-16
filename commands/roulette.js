@@ -48,7 +48,7 @@ module.exports = {
             interaction.chosenJobs.push(relevantJobs[ Math.floor(Math.random() * relevantJobs.length) ]);
         }
 
-        var answer = `For this "${roulette.description}", I suggest that you use the following jobs:`;
+        var answer = `For this "${roulette.description}" roulette, I suggest that you use the following jobs:`;
         interaction.chosenJobs.forEach((job, index) => {
             answer += `\n - Player ${index + 1}: ${job.name} :${job.id}:`;
         });

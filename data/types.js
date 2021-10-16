@@ -48,7 +48,7 @@ module.exports = {
         },
         'story': {
             level: 50,
-            description: `Main scenario (Don't forget to grab popcorn!)`,
+            description: `Main scenario`,
             roles: ['TANK', 'TANK', 'HEAL', 'HEAL', 'DPS', 'DPS', 'DPS', 'DPS'] // 2, 2, 4
         },
         'alliance': {
