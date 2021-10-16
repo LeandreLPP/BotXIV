@@ -1,6 +1,18 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
 const { Roulettes, Jobs } = require("../data/types.js");
 
+function emojiString(id, interaction) {
+    var ret = `:${id}:`;
+
+    interaction.guild.emojis.cache.forEach(emoji => {
+        if(emoji.name === id)  {
+            ret = `<:${emoji.name}:${emoji.id}>`;
+        }
+    });
+    
+    return ret;
+}
+
 module.exports = {
 	data: new SlashCommandBuilder()
         .setName('roulette')
@@ -27,15 +39,15 @@ module.exports = {
         const type = interaction.options.getString('type');
         var number = interaction.options.getInteger('number');
 
-        const roulette = Roulettes[type];
-        if( roulette === null ) {
+        interaction.roulette = Roulettes[type];
+        if( interaction.roulette === null ) {
             await interaction.reply({ content: 'The roulette type selected is not recognised!', ephemeral: true });
             return;
         }
 
 		await interaction.deferReply();
 
-        interaction.rolesNeeded = [...roulette.roles];
+        interaction.rolesNeeded = [...interaction.roulette.roles];
         if( number === null || number > interaction.rolesNeeded.length )
             number = interaction.rolesNeeded.length;
 
@@ -48,9 +60,9 @@ module.exports = {
             interaction.chosenJobs.push(relevantJobs[ Math.floor(Math.random() * relevantJobs.length) ]);
         }
 
-        var answer = `For this "${roulette.description}" roulette, I suggest that you use the following jobs:`;
+        var answer = `For this "${interaction.roulette.description}" roulette, I suggest that you use the following jobs:`;
         interaction.chosenJobs.forEach((job, index) => {
-            answer += `\n - Player ${index + 1}: ${job.name} :${job.id}:`;
+            answer += `\n - Player ${index + 1}: ${emojiString(job.id, interaction)} ${job.name}`;
         });
 
         await interaction.editReply(answer);
