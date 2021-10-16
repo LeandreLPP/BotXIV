@@ -67,7 +67,18 @@ async function updateResult(interaction) {
 }
 
 function getRelevantJobsForPlayer(interaction, player) {
-    return Jobs.filter( job => interaction.rolesNeeded.includes(job.role) && !player.history.includes(job.id) );
+    var jobTaken = interaction.players.filter(p => p !== player).map(p => p.job.id);
+
+    // First pass avoiding duplicates
+    var ret = Jobs.filter( job => interaction.rolesNeeded.includes(job.role) && 
+        !player.history.includes(job.id) &&
+        !jobTaken.includes(job.id) );
+
+    // Second pass allowing duplicates
+    if( ret.length === 0 )
+        ret = Jobs.filter( job => interaction.rolesNeeded.includes(job.role) && !player.history.includes(job.id) );
+        
+    return ret;
 }
 
 function removeFirst(array, value) {
