@@ -23,7 +23,7 @@ async function reactToButton(buttonInteraction, interaction) {
         await updateResult(interaction);
     }
     else if( parameters[1] == 'rerollPlayer' ) {
-        rerollPlayer(interaction, parameters[2]);
+        rollJobForPlayer(interaction, interaction.players[parameters[2]]);
         await updateResult(interaction);
     }
 }
@@ -33,9 +33,9 @@ async function updateResult(interaction) {
 
     const buttons = [];
 
-    interaction.chosenJobs.forEach((job, index) => {
-        const emoji = getGuildEmoji(job.id, interaction.guild);
-        answer += `\n - Player ${index + 1}: ${emojiString(job.id, interaction.guild)} ${job.name}`;
+    interaction.players.forEach((player, index) => {
+        const emoji = getGuildEmoji(player.job.id, interaction.guild);
+        answer += `\n - Player ${index + 1}: ${emojiString(player.job.id, interaction.guild)} ${player.job.name}`;
 
         var rerollButton = new MessageButton()
             .setCustomId(`${interaction.id}-rerollPlayer-${index}`)
@@ -66,28 +66,53 @@ async function updateResult(interaction) {
     await interaction.editReply({ content: answer, components: componentRows });
 }
 
-function rerollPlayer(interaction, index) {
-    if( index < 0 || index >= interaction.chosenJobs.length )
-        return;
-
-    interaction.rolesNeeded.push( interaction.chosenJobs[index].role );
-    interaction.chosenJobs.splice(index, 1, chooseJob(interaction));
+function getRelevantJobsForPlayer(interaction, player) {
+    return Jobs.filter( job => interaction.rolesNeeded.includes(job.role) && !player.history.includes(job.id) );
 }
 
-function chooseJob(interaction) {
-    if( interaction.rolesNeeded.length <= 0 )
-        return undefined;
+function removeFirst(array, value) {
+    for( var i = 0; i < array.length; i++){ 
+        if ( array[i] === value) { 
+            array.splice(i, 1); 
+            return;
+        }
+    }
+}
 
-    const chosenIndex =  Math.floor(Math.random() * interaction.rolesNeeded.length);
-    const chosenRole = interaction.rolesNeeded.splice(chosenIndex, 1);
-    const relevantJobs = Jobs.filter( job => job.role === chosenRole[0] );
-    return relevantJobs[ Math.floor(Math.random() * relevantJobs.length) ];
+function rollJobForPlayer(interaction, player) {
+    if( player.job )
+        interaction.rolesNeeded.push(player.job.role);
+
+    if( interaction.rolesNeeded.length <= 0 )
+        return;
+
+    var relevantJobs = getRelevantJobsForPlayer(interaction, player);
+    if( relevantJobs.length === 0 ) {
+        if( player.history.length === 0 )
+            return;
+        else {
+            player.history = [];
+            relevantJobs = getRelevantJobsForPlayer(interaction, player);
+        }
+    }
+
+    player.job = relevantJobs[ Math.floor(Math.random() * relevantJobs.length) ];
+    player.history.push(player.job.id);
+    removeFirst(interaction.rolesNeeded, player.job.role);
 }
 
 function addPlayer(interaction) {
-    const chosenJob = chooseJob(interaction);
-    if( chosenJob )
-        interaction.chosenJobs.push( chosenJob );
+    if( interaction.rolesNeeded.length <= 0 )
+        return;
+        
+    const player = {
+        index: interaction.players.length,
+        job: undefined,
+        history: []
+    };
+
+    interaction.players.push( player );
+    rollJobForPlayer(interaction, player);
 }
 
 module.exports = {
@@ -130,7 +155,7 @@ module.exports = {
         else if( number > interaction.rolesNeeded.length )
             number = interaction.rolesNeeded.length;
 
-        interaction.chosenJobs = [];
+        interaction.players = [];
         for(var i = 0; i < number; i++) {
             addPlayer(interaction);
         }
