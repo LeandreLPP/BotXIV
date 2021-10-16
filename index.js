@@ -1,7 +1,7 @@
 const dotenv = require('dotenv');
 const fs = require('fs');
 const { Client, Collection, Intents } = require('discord.js');
-const ffTypes = require('data/types.ts');
+const ffTypes = require('./data/types.js');
 
 dotenv.config();
 
