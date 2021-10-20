@@ -1,4 +1,5 @@
 module.exports = {
+    MaxLevel: 80,
     Jobs: [
         { name: 'Paladin',      id: 'PLD', role: 'TANK' },
         { name: 'Warrior',      id: 'WAR', role: 'TANK' },
